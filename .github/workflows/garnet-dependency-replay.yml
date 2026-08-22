@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install the locked dependency graph
-        run: uv sync --frozen --all-extras --dev
+        run: uv sync --frozen --all-extras --all-groups
       - name: Import the changed native dependency
         run: uv run python -c "import cryptography; print(cryptography.__version__)"
       - name: Hold capture window for delayed children
