@@ -1,0 +1,41 @@
+name: Garnet Dependency Replay
+
+on:
+  push:
+    branches: ['rb/**']
+  pull_request:
+    paths:
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/garnet-dependency-replay.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: garnet-dependency-replay-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  uv-install:
+    name: Python lock install (recorded)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Garnet Runtime Visibility
+        uses: garnet-org/action@v2
+        with:
+          api_token: ${{ secrets.GARNET_API_TOKEN }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install the locked dependency graph
+        run: uv sync --frozen --all-extras --dev
+      - name: Import the changed native dependency
+        run: uv run python -c "import cryptography; print(cryptography.__version__)"
+      - name: Hold capture window for delayed children
+        run: sleep 45
